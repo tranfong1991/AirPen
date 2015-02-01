@@ -6,11 +6,9 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,17 +18,20 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 
+
 public class MainActivity extends ActionBarActivity implements SensorEventListener{
 
     private SensorManager mSensorManager;
     private Sensor mSenAccelerometer;
     private Vibrator v;
+
     private Socket socket;
     private PrintWriter out;
     private InetAddress adr;
     private long lastUpdate = 0;
     private float last_x, last_y, last_z;
     private static final int SHAKE_THRESHOLD = 600;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +39,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mSenAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
         mSensorManager.registerListener(this, mSenAccelerometer , SensorManager.SENSOR_DELAY_UI);
         mSenAccelerometer = mSensorManager .getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
@@ -63,7 +65,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             Toast.makeText(this, "Socket is not null", Toast.LENGTH_LONG).show();
         }
 
-        //out.println("Hello");
+
+        mSensorManager.registerListener(this, mSenAccelerometer , SensorManager.SENSOR_DELAY_FASTEST);
+        mSenAccelerometer = mSensorManager .getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+
     }
 
 
@@ -76,7 +82,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     @Override
     protected void onResume(){
         super.onResume();
+
         mSensorManager.registerListener(this, mSenAccelerometer, mSensorManager.SENSOR_DELAY_UI);
+
     }
 
 
@@ -114,6 +122,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
             xCoord.setText(Double.toString(Math.round(x * 1000)));
             yCoord.setText(Double.toString(Math.round(y * 1000)));
+
 
 
 
