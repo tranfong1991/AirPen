@@ -2,10 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.rafa.myapplication" >
     <uses-permission android:name="android.permission.VIBRATE"></uses-permission>
-<<<<<<< HEAD
     <uses-permission android:name="android.permission.INTERNET"/>
-=======
->>>>>>> 2aef9576218ef800a64282b2da795687835398fc
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"

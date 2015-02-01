@@ -1,6 +1,7 @@
 package com.example.rafa.myapplication;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -9,6 +10,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.v7.app.ActionBarActivity;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,10 +20,14 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
+import java.math.*;
 
+public class MainActivity extends ActionBarActivity implements SensorEventListener, View.OnClickListener{
 
-public class MainActivity extends ActionBarActivity implements SensorEventListener{
-
+    private Button draw;
+    private Button red;
+    private Button yellow;
+    private Button blue;
     private SensorManager mSensorManager;
     private Sensor mSenAccelerometer;
     private Vibrator v;
@@ -28,9 +35,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private Socket socket;
     private PrintWriter out;
     private InetAddress adr;
-    private long lastUpdate = 0;
-    private float last_x, last_y, last_z;
-    private static final int SHAKE_THRESHOLD = 600;
+    private boolean on = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +52,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             @Override
             protected Void doInBackground(Void... params){
                 try {
-                    adr = InetAddress.getByName("192.168.137.249");
+                    adr = InetAddress.getByName("192.168.137.98");
                     socket = new Socket(adr, 1008);
                     out = new PrintWriter(socket.getOutputStream(), true);
                 } catch (IOException e){
@@ -57,36 +62,73 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             }
         }.execute(null, null, null);
 
-
-
-        if(socket == null) {
-            Toast.makeText(this, "Socket is null", Toast.LENGTH_LONG).show();
-        }else{
-            Toast.makeText(this, "Socket is not null", Toast.LENGTH_LONG).show();
-        }
-
-
-        mSensorManager.registerListener(this, mSenAccelerometer , SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(this, mSenAccelerometer , SensorManager.SENSOR_DELAY_UI);
         mSenAccelerometer = mSensorManager .getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        draw = (Button) findViewById(R.id.draw);
+        red = (Button) findViewById(R.id.red);
+        yellow = (Button) findViewById(R.id.yellow);
+        blue = (Button) findViewById(R.id.blue);
+
+        red.setOnClickListener(this);
+        blue.setOnClickListener(this);
+        yellow.setOnClickListener(this);
+        draw.setOnClickListener(this);
+
+
 
 
     }
 
+    @Override
+    public void onClick(View v){
+        int id = v.getId();
+        switch(id){
+            case R.id.red:
+                out.println("c red");
+                break;
+            case R.id.yellow:
+                out.println("c yellow");
+                break;
+            case R.id.blue:
+                out.println("c blue");
+                break;
+            case R.id.draw:
+                if (on == false) {
+                    on = true;
+                    out.println("on");
+                } else {
+                    on = false;
+                    out.println("off");
+                }
+                break;
+        }
 
+    }
+    @Override
+    protected void onStop(){
+        super.onStop();
+        mSensorManager.unregisterListener(this);
+        try{
+            socket.close();
+        }catch(IOException e){
+            System.out.println(e.getMessage());
+        }
+    }
     @Override
     protected void onPause(){
         super.onPause();
-        mSensorManager.unregisterListener(this);
+
+
     }
 
     @Override
     protected void onResume(){
         super.onResume();
-
         mSensorManager.registerListener(this, mSenAccelerometer, mSensorManager.SENSOR_DELAY_UI);
 
-    }
 
+    }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -94,25 +136,27 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
         if (mySensor.getType() == Sensor.TYPE_ACCELEROMETER){
 
-            float x = event.values[0];
-            float y = event.values[1];
-            float z = event.values[2];
+            final float alpha = 0.1f;
+            float[] gravity = new float[3];
 
-            int xd = Math.round(x * 1000);
-            int yd = Math.round(y * 1000);
+//            gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
+//            gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
+//            gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
+
+            gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
+            gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
+            gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
+
+//            int xd = (int) event.values[0]*-10 + 600;
+//            int yd = (int) event.values[0]*-10 + 250;
+
+
+            int xd = (int)(-1 * (Math.pow(event.values[0], 3))) + 600;
+            int yd = (int)((Math.pow(event.values[1], 3))) + 250;
 
            if(out != null){
-
-               /*long beginTime = System.currentTimeMillis();
-
-               long endTime = System.currentTimeMillis();
-               long tDelta = endTime - beginTime;
-               double elapsedSeconds = tDelta;*/
-
-
-
-                   out.println(xd +"," + yd);
-                   out.flush();
+                out.println(xd +"," + yd);
+                out.flush();
             }  else{
                 System.out.println("out is null");
             }
@@ -120,9 +164,8 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             TextView xCoord = (TextView) findViewById(R.id.x_axis);
             TextView yCoord = (TextView) findViewById(R.id.y_axis);
 
-            xCoord.setText(Double.toString(Math.round(x * 1000)));
-            yCoord.setText(Double.toString(Math.round(y * 1000)));
-
+            xCoord.setText(Integer.toString((int)(-1 * (Math.pow(event.values[0], 3)))));
+            yCoord.setText(Integer.toString((int)(-1 * (Math.pow(event.values[1], 3)))));
 
 
 
