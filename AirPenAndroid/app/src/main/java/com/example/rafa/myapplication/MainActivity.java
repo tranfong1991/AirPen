@@ -30,7 +30,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private Button blue;
     private SensorManager mSensorManager;
     private Sensor mSenAccelerometer;
-    private Vibrator v;
+    
 
     private Socket socket;
     private PrintWriter out;
@@ -47,7 +47,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
         mSensorManager.registerListener(this, mSenAccelerometer , SensorManager.SENSOR_DELAY_UI);
         mSenAccelerometer = mSensorManager .getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-
+        
+        
+        /*this takes care of threading our request. we need to be able to interact with ui while
+        it communicates and sends info to the server*/
         new AsyncTask<Void, Void, Void>(){
             @Override
             protected Void doInBackground(Void... params){
@@ -79,7 +82,8 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
 
     }
-
+    //we are passing color values to the server which get parsed and displayed on the desktop
+    // c means "color" and either "red" "yellow" or "blue" follow
     @Override
     public void onClick(View v){
         int id = v.getId();
@@ -105,6 +109,8 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         }
 
     }
+    
+    //make sure we close the socket when application stops
     @Override
     protected void onStop(){
         super.onStop();
@@ -139,21 +145,19 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             final float alpha = 0.1f;
             float[] gravity = new float[3];
 
-//            gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
-//            gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
-//            gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
-
+           
+            //attempt at low pass filter
             gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
             gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
             gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
 
-//            int xd = (int) event.values[0]*-10 + 600;
-//            int yd = (int) event.values[0]*-10 + 250;
 
 
-            int xd = (int)(-1 * (Math.pow(event.values[0], 3))) + 600;
-            int yd = (int)((Math.pow(event.values[1], 3))) + 250;
-
+            //my attemp at  better solution than the low pass filter
+            /*int xd = (int)(-1 * (Math.pow(event.values[0], 3))) + 600;
+            int yd = (int)((Math.pow(event.values[1], 3))) + 250;*/
+            
+            //this is where we pass the accelerometer data to the server
            if(out != null){
                 out.println(xd +"," + yd);
                 out.flush();
@@ -163,7 +167,8 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
             TextView xCoord = (TextView) findViewById(R.id.x_axis);
             TextView yCoord = (TextView) findViewById(R.id.y_axis);
-
+            
+            //or maybe this is aaron's better solution.
             xCoord.setText(Integer.toString((int)(-1 * (Math.pow(event.values[0], 3)))));
             yCoord.setText(Integer.toString((int)(-1 * (Math.pow(event.values[1], 3)))));
 
